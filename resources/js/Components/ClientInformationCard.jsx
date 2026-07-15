@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
+import { Users, Inbox } from 'lucide-react';
 import Highcharts from 'highcharts';
 import * as HighchartsReactModule from 'highcharts-react-official';
-import * as HighchartsReactModule from 'highcharts-react-official';
+import * as Highcharts3DModule from 'highcharts/highcharts-3d';
 
 function resolveComponent(mod) {
   let m = mod;
@@ -12,17 +13,15 @@ function resolveComponent(mod) {
 }
 
 const HighchartsReact = resolveComponent(HighchartsReactModule);
-if (typeof Highcharts === 'object') {
-  if (typeof Highcharts3D === 'function') {
-    Highcharts3D(Highcharts);
-  } else if (Highcharts3D && typeof Highcharts3D.default === 'function') {
-    Highcharts3D.default(Highcharts);
-  }
+const Highcharts3D = resolveComponent(Highcharts3DModule);
+
+if (typeof Highcharts === 'object' && typeof Highcharts3D === 'function') {
+  Highcharts3D(Highcharts);
 }
 
 const COLORS = [
-  '#4472C4', '#ED7D31', '#A5A5A5', '#FFC000', '#5B9BD5',
-  '#70AD47', '#264478', '#9E480E', '#636363', '#997300',
+  '#2563EB', '#F97316', '#94A3B8', '#EAB308', '#38BDF8',
+  '#22C55E', '#1E3A8A', '#B45309', '#64748B', '#A16207',
 ];
 
 export default function ClientInformationCard({ clientDetails = [] }) {
@@ -43,13 +42,15 @@ export default function ClientInformationCard({ clientDetails = [] }) {
     }));
   }, [clientDetails]);
 
+  const hasData = chartData.some((d) => d.y > 0);
+
   const options = {
     chart: {
       type: 'pie',
       options3d: { enabled: true, alpha: 45, beta: 0 },
       backgroundColor: 'transparent',
       margin: [10, 0, 10, 0],
-      spacing: [0, 0, 0, 0],
+      spacing: [10, 50, 10, 50],
     },
     title: null,
     tooltip: { pointFormat: '{series.name}: <b>{point.y}</b>' },
@@ -58,13 +59,16 @@ export default function ClientInformationCard({ clientDetails = [] }) {
         allowPointSelect: true,
         cursor: 'pointer',
         depth: 35,
-        size: '100%',
+        size: '65%',
         dataLabels: {
           enabled: true,
           useHTML: true,
           connectorWidth: 0,
+          allowOverlap: true,
+          crop: false,
+          overflow:'allow',
           formatter() {
-            return `<span style="color: ${this.point.color}; font-weight: bold; font-size: 13px;">${this.point.name}</span>`;
+            return `<span style="color: ${this.point.color}; font-weight: 600; font-size: 12.5px;">${this.point.name}</span>`;
           },
           distance: 15,
           style: { textOutline: 'none' },
@@ -76,19 +80,30 @@ export default function ClientInformationCard({ clientDetails = [] }) {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 flex-1" data-card>
-      <div className="mb-2">
-        <h3 className="font-semibold text-gray-900">Client Information</h3>
-        <p className="text-xs text-gray-500 mt-0.5">
-          Client segmentation and record status from the analytics service.
-        </p>
+    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex-1 min-w-0" data-card>
+      <div className="flex items-center gap-2.5 mb-1">
+        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+          <Users size={16} strokeWidth={2.2} />
+        </div>
+        <h3 className="font-semibold text-slate-900">Client Information</h3>
       </div>
-      <div className="w-full flex flex-col items-center justify-center relative z-10 h-[400px]">
-        <HighchartsReact
-          highcharts={Highcharts}
-          options={options}
-          containerProps={{ style: { width: '100%', height: '100%' } }}
-        />
+      <p className="text-xs text-slate-400 mb-3 pl-[42px]">
+        Client segmentation and record status from the analytics service.
+      </p>
+
+      <div className="w-full flex flex-col items-center justify-center relative z-10 h-[380px]">
+        {hasData ? (
+          <HighchartsReact
+            highcharts={Highcharts}
+            options={options}
+            containerProps={{ style: { width: '100%', height: '100%' } }}
+          />
+        ) : (
+          <div className="flex flex-col items-center gap-2 text-slate-400">
+            <Inbox size={28} strokeWidth={1.5} />
+            <span className="text-sm">No client information available.</span>
+          </div>
+        )}
       </div>
     </div>
   );

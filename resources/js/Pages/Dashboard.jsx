@@ -1,4 +1,5 @@
 import { Head, router } from '@inertiajs/react';
+import { Calendar, Activity, User } from 'lucide-react';
 import Sidebar from '@/Components/Sidebar';
 import ClientInformationCard from '@/Components/ClientInformationCard';
 import ShareMovementCard from '@/Components/ShareMovementCard';
@@ -15,37 +16,45 @@ export default function Dashboard({
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-slate-50">
       <Head title="Executive Dashboard" />
       <Sidebar />
 
       <div className="flex-1 flex flex-col">
-        <header className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200">
-          <div className="text-sm text-gray-600">Unified Portfolio Ledger</div>
+        <header className="flex items-center justify-between px-8 py-3.5 bg-white border-b border-slate-200">
+          <div className="text-sm text-slate-500 font-medium">Unified Portfolio Ledger</div>
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-full px-3 py-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
+              <Activity size={12} strokeWidth={2.5} />
               Pipeline Engine Active
             </span>
+            <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500">
+              <User size={15} />
+            </div>
           </div>
         </header>
 
-        <main className="p-6 space-y-6">
-          <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-start justify-between flex-wrap gap-4">
+        <main className="p-8 space-y-6 max-w-[1600px] w-full mx-auto">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-start justify-between flex-wrap gap-4">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">GSAM Executive Dashboard</h1>
-              <p className="text-sm text-gray-500 mt-1">
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">GSAM Executive Dashboard</h1>
+              <p className="text-sm text-slate-500 mt-1.5">
                 Real-time positions, client segmentation, and fund flows across the portfolio.
               </p>
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-400 uppercase block mb-1">Value Date</label>
-              <input
-                type="date"
-                value={filters.value_date}
-                onChange={handleTopFilterChange('value_date')}
-                className="border border-gray-300 rounded-md text-sm px-2 py-1.5"
-              />
+              <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">
+                Value Date
+              </label>
+              <div className="relative">
+                <Calendar size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <input
+                  type="date"
+                  value={filters.value_date}
+                  onChange={handleTopFilterChange('value_date')}
+                  className="border border-slate-300 rounded-lg text-sm pl-9 pr-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+                />
+              </div>
             </div>
           </div>
 
