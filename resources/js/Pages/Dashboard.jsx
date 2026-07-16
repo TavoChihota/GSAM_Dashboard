@@ -20,8 +20,8 @@ export default function Dashboard({
       <Head title="Executive Dashboard" />
       <Sidebar />
 
-      <div className="flex-1 flex flex-col">
-        <header className="flex items-center justify-between px-8 py-3.5 bg-white border-b border-slate-200">
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="flex items-center justify-between px-8 py-3.5 bg-white border-b border-slate-200 gap-3 flex-wrap">
           <div className="text-sm text-slate-500 font-medium">Unified Portfolio Ledger</div>
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">

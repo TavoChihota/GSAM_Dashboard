@@ -49,8 +49,9 @@ export default function ClientInformationCard({ clientDetails = [] }) {
       type: 'pie',
       options3d: { enabled: true, alpha: 45, beta: 0 },
       backgroundColor: 'transparent',
-      margin: [10, 0, 10, 0],
-      spacing: [10, 50, 10, 50],
+      margin: [10, 10, 10, 10],
+      spacing: [10, 10, 10, 10],
+      height: 300,
     },
     title: null,
     tooltip: { pointFormat: '{series.name}: <b>{point.y}</b>' },
@@ -59,21 +60,22 @@ export default function ClientInformationCard({ clientDetails = [] }) {
         allowPointSelect: true,
         cursor: 'pointer',
         depth: 35,
-        size: '65%',
-        dataLabels: {
-          enabled: true,
-          useHTML: true,
-          connectorWidth: 0,
-          allowOverlap: true,
-          crop: false,
-          overflow:'allow',
-          formatter() {
-            return `<span style="color: ${this.point.color}; font-weight: 600; font-size: 12.5px;">${this.point.name}</span>`;
-          },
-          distance: 15,
-          style: { textOutline: 'none' },
-        },
+        size: '62%',
+        center: ['32%', '50%'],
+        dataLabels: { enabled: false },
+        showInLegend: true,
       },
+    },
+    legend: {
+      align: 'right',
+      verticalAlign: 'middle',
+      layout: 'vertical',
+      itemStyle: { fontWeight: '600', fontSize: '12px', color: '#334155' },
+      itemHoverStyle: { color: '#0F172A' },
+      itemMarginBottom: 9,
+      symbolRadius: 3,
+      symbolWidth: 12,
+      symbolHeight: 12,
     },
     credits: { enabled: false },
     series: [{ type: 'pie', name: 'Record Count', data: chartData }],
@@ -91,7 +93,7 @@ export default function ClientInformationCard({ clientDetails = [] }) {
         Client segmentation and record status from the analytics service.
       </p>
 
-      <div className="w-full flex flex-col items-center justify-center relative z-10 h-[380px]">
+      <div className="w-full flex flex-col items-center justify-center relative z-10 h-[300px]">
         {hasData ? (
           <HighchartsReact
             highcharts={Highcharts}
