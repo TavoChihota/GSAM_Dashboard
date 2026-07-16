@@ -4,12 +4,14 @@ import Sidebar from '@/Components/Sidebar';
 import ClientInformationCard from '@/Components/ClientInformationCard';
 import ShareMovementCard from '@/Components/ShareMovementCard';
 import FundsUnderManagementCard from '@/Components/FundsUnderManagementCard';
+import CashMovementCard from '@/Components/CashMovementCard';
 
 export default function Dashboard({
   filters = { value_date: new Date().toISOString().slice(0, 10), currency: 'USD' },
   clientDetails = [],
   shareMovement = [],
   fundsUnderManagement = { rows: [], sums: null },
+  cashMovement = { items: [], total: 0 },
 }) {
   const handleTopFilterChange = (key) => (e) => {
     router.get('/dashboard', { ...filters, [key]: e.target.value }, { preserveState: true, preserveScroll: true });
@@ -62,6 +64,8 @@ export default function Dashboard({
             <ClientInformationCard clientDetails={clientDetails} />
             <ShareMovementCard shareMovement={shareMovement} filters={filters} />
           </div>
+
+          <CashMovementCard cashMovement={cashMovement} />
 
           <FundsUnderManagementCard fundsUnderManagement={fundsUnderManagement} filters={filters} />
         </main>

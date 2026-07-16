@@ -89,6 +89,47 @@ class GsamApiClient
     }
 
     /**
+     * POST /api/Dashboard/Transaction
+     * Deposits/withdrawals for the month containing the given date range.
+     * Returns array of { deposits, withdrawal } (strings)
+     */
+    public function transaction(string $startDate, string $endDate): array
+    {
+        $response = $this->client()->post('/api/Dashboard/Transaction', [
+            'StartDate' => $startDate,
+            'EndDate'   => $endDate,
+        ]);
+
+        return $this->unwrap($response, 'transaction');
+    }
+
+    /**
+     * POST /api/Dashboard/MaturitiesCashMovement
+     * Returns array (single row) of { totalMaturities, totalMaturitiesLiability }
+     */
+    public function maturitiesCashMovement(string $endDate): array
+    {
+        $response = $this->client()->post('/api/Dashboard/MaturitiesCashMovement', [
+            'EndDate' => $endDate,
+        ]);
+
+        return $this->unwrap($response, 'maturitiesCashMovement');
+    }
+
+    /**
+     * POST /api/Dashboard/PlacementsCashMovement
+     * Returns array (single row) of { totalPlacements, totalPlacementsLiability }
+     */
+    public function placementsCashMovement(string $endDate): array
+    {
+        $response = $this->client()->post('/api/Dashboard/PlacementsCashMovement', [
+            'EndDate' => $endDate,
+        ]);
+
+        return $this->unwrap($response, 'placementsCashMovement');
+    }
+
+    /**
      * The .NET API always responds { status, message, data }.
      * This normalizes that into just the data (or throws/logs on error)
      * so controllers don't have to repeat this check everywhere.
