@@ -54,7 +54,7 @@ class DashboardController extends Controller
         $monthEnd   = $date->copy()->endOfMonth()->format('d F Y');
         $endDateIso = $date->copy()->format('Y-m-d');
 
-        \Log::info('GSAM EndDate being sent', ['endDateIso' => $endDateIso]);
+    
 
         $tx  = $this->gsam->transaction($monthStart, $monthEnd);
         $mat = $this->gsam->maturitiesCashMovement($endDateIso);
