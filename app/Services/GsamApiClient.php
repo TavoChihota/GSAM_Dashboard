@@ -130,6 +130,52 @@ class GsamApiClient
     }
 
     /**
+     * POST /api/Dashboard/Top5GainsAndLosses
+     * Returns array of { category, name, id, price, previousPrice, difference,
+     * percentageDifference, currentShares } — one flat list, split client-side
+     * (or here) into gains vs losses.
+     */
+    public function top5GainsAndLosses(int $exchangeId = 1): array
+    {
+        $response = $this->client()->post('/api/Dashboard/Top5GainsAndLosses', [
+            'exchangeID' => $exchangeId,
+        ]);
+
+        return $this->unwrap($response, 'top5GainsAndLosses');
+    }
+
+    /**
+     * POST /api/Dashboard/CashFlowForecast_Data
+     * Returns array of per-instrument cash flow rows for the given range.
+     */
+    public function cashFlowForecast(string $startDate, string $endDate): array
+    {
+        $response = $this->client()->post('/api/Dashboard/CashFlowForecast_Data', [
+            'StartDate' => $startDate,
+            'EndDate'   => $endDate,
+        ]);
+
+        return $this->unwrap($response, 'cashFlowForecast');
+    }
+
+    /**
+     * POST /api/MoneyMarket/Maturities
+     * Returns per-deal maturity rows, filtered to either the asset side or
+     * the liability side depending on which flag is true.
+     */
+    public function maturities(string $startDate, string $endDate, bool $assets): array
+    {
+        $response = $this->client()->post('/api/MoneyMarket/Maturities', [
+            'StartDate'   => $startDate,
+            'EndDate'     => $endDate,
+            'Assets'      => $assets,
+            'Liabilities' => ! $assets,
+        ]);
+
+        return $this->unwrap($response, 'maturities');
+    }
+
+    /**
      * The .NET API always responds { status, message, data }.
      * This normalizes that into just the data (or throws/logs on error)
      * so controllers don't have to repeat this check everywhere.

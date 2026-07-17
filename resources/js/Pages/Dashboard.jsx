@@ -5,6 +5,9 @@ import ClientInformationCard from '@/Components/ClientInformationCard';
 import ShareMovementCard from '@/Components/ShareMovementCard';
 import FundsUnderManagementCard from '@/Components/FundsUnderManagementCard';
 import CashMovementCard from '@/Components/CashMovementCard';
+import TopGainsLossesCard from '@/Components/TopGainsLossesCard';
+import CashFlowForecastCard from '@/Components/CashFlowForecastCard';
+import MaturitiesCard from '@/Components/MaturitiesCard';
 
 export default function Dashboard({
   filters = { value_date: new Date().toISOString().slice(0, 10), currency: 'USD' },
@@ -12,6 +15,9 @@ export default function Dashboard({
   shareMovement = [],
   fundsUnderManagement = { rows: [], sums: null },
   cashMovement = { items: [], total: 0 },
+  topGainsLosses = { gains: [], losses: [] },
+  cashFlowForecast = { rows: [], totals: {} },
+  maturities = { assets: { rows: [], totals: {} }, liabilities: { rows: [], totals: {} } },
 }) {
   const handleTopFilterChange = (key) => (e) => {
     router.get('/dashboard', { ...filters, [key]: e.target.value }, { preserveState: true, preserveScroll: true });
@@ -66,6 +72,12 @@ export default function Dashboard({
           </div>
 
           <CashMovementCard cashMovement={cashMovement} />
+
+          <TopGainsLossesCard topGainsLosses={topGainsLosses} />
+
+          <CashFlowForecastCard cashFlowForecast={cashFlowForecast} />
+
+          <MaturitiesCard maturities={maturities} />
 
           <FundsUnderManagementCard fundsUnderManagement={fundsUnderManagement} filters={filters} />
         </main>

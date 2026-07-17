@@ -25,6 +25,9 @@ class DashboardController extends Controller
         $shareMovement = $this->gsam->shareMovement($valueDate);
         $fum           = $this->gsam->fundsUnderManagement($valueDate, $currencyId);
         $cashMovement  = $this->getCashMovement($valueDate);
+        $topGainsLosses = $this->getTopGainsAndLosses();
+        $cashFlowForecast = $this->getCashFlowForecast($valueDate);
+        $maturities = $this->getMaturities($valueDate);
 
         return Inertia::render('Dashboard', [
             'filters' => [
@@ -37,8 +40,96 @@ class DashboardController extends Controller
                 'rows' => $fum['rows'] ?? [],
                 'sums' => $fum['sums'] ?? null,
             ],
-            'cashMovement' => $cashMovement,
+            'cashMovement'      => $cashMovement,
+            'topGainsLosses'    => $topGainsLosses,
+            'cashFlowForecast'  => $cashFlowForecast,
+            'maturities'        => $maturities,
         ]);
+    }
+
+    /**
+     * Fetches maturity deal rows for both the asset and liability side,
+     * each with a totals row — mirrors the two MaturityDataGrid instances
+     * (isAssets=true / isAssets=false) from the original app.
+     */
+    protected function getMaturities(string $valueDate): array
+    {
+        $date = \Carbon\Carbon::parse($valueDate);
+        $startDate = $date->copy()->startOfMonth()->format('Y-m-d');
+        $endDate   = $date->copy()->format('Y-m-d');
+
+        $buildSide = function (array $rows) {
+            $sum = fn ($field) => array_sum(array_map(fn ($r) => (float) ($r[$field] ?? 0), $rows));
+            return [
+                'rows' => $rows,
+                'totals' => [
+                    'count'         => count($rows),
+                    'nominal'       => $sum('nominal'),
+                    'interest'      => $sum('interest'),
+                    'maturityValue' => $sum('maturityValue'),
+                    'netAmount'     => $sum('netAmount'),
+                ],
+            ];
+        };
+
+        return [
+            'assets'      => $buildSide($this->gsam->maturities($startDate, $endDate, true)),
+            'liabilities' => $buildSide($this->gsam->maturities($startDate, $endDate, false)),
+        ];
+    }
+
+    /**
+     * Fetches per-instrument cash flow rows from the 1st of the selected
+     * month through the selected date, plus pre-computed column totals for
+     * the summary row (mirrors CashFlowForecastGrid.js's DevExtreme Summary).
+     */
+    protected function getCashFlowForecast(string $valueDate): array
+    {
+        $date = \Carbon\Carbon::parse($valueDate);
+        $startDate = $date->copy()->startOfMonth()->format('Y-m-d');
+        $endDate   = $date->copy()->format('Y-m-d');
+
+        $rows = $this->gsam->cashFlowForecast($startDate, $endDate);
+
+        $sum = fn ($field) => array_sum(array_map(fn ($r) => (float) ($r[$field] ?? 0), $rows));
+
+        return [
+            'rows'  => $rows,
+            'totals' => [
+                'count'       => count($rows),
+                'price'       => $sum('price'),
+                'interest'    => $sum('interest'),
+                'cashFlow'    => $sum('cashFlow'),
+                'cashFlowIn'  => $sum('cashFlowIn'),
+                'cashFlowOut' => $sum('cashFlowOut'),
+            ],
+        ];
+    }
+
+    /**
+     * Splits the flat Top5GainsAndLosses response into two sorted, capped
+     * lists — mirrors the client-side filter/sort Table_Top5GainsAndLosses.tsx
+     * did in the original Next.js app.
+     */
+    protected function getTopGainsAndLosses(): array
+    {
+        $rows = $this->gsam->top5GainsAndLosses();
+
+        $gains = collect($rows)
+            ->filter(fn ($r) => str_contains(strtolower($r['category'] ?? ''), 'gain'))
+            ->sortByDesc(fn ($r) => $r['percentageDifference'] ?? 0)
+            ->take(5)
+            ->values()
+            ->toArray();
+
+        $losses = collect($rows)
+            ->filter(fn ($r) => str_contains(strtolower($r['category'] ?? ''), 'loss'))
+            ->sortBy(fn ($r) => $r['percentageDifference'] ?? 0)
+            ->take(5)
+            ->values()
+            ->toArray();
+
+        return ['gains' => $gains, 'losses' => $losses];
     }
 
     /**
@@ -54,7 +145,7 @@ class DashboardController extends Controller
         $monthEnd   = $date->copy()->endOfMonth()->format('d F Y');
         $endDateIso = $date->copy()->format('Y-m-d');
 
-    
+        \Log::info('GSAM EndDate being sent', ['endDateIso' => $endDateIso]);
 
         $tx  = $this->gsam->transaction($monthStart, $monthEnd);
         $mat = $this->gsam->maturitiesCashMovement($endDateIso);
