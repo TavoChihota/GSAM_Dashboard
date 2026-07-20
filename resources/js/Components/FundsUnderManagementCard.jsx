@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
 import { router } from '@inertiajs/react';
-import { Wallet, Calendar, Inbox } from 'lucide-react';
+import { Wallet, Calendar, Inbox, Download } from 'lucide-react';
 import Highcharts from 'highcharts';
 import * as HighchartsReactModule from 'highcharts-react-official';
+import CardIconButton from '@/Components/CardIconButton';
+import { downloadSectionsAsPdf } from '@/lib/exportCardPdf';
 
 function resolveComponent(mod) {
   let m = mod;
@@ -116,16 +118,29 @@ export default function FundsUnderManagementCard({ fundsUnderManagement = { rows
           </div>
           <h3 className="font-semibold text-slate-900">Funds Under Management</h3>
         </div>
-        <div>
-          <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">Value Date</label>
-          <div className="relative">
-            <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-            <input
-              type="date"
-              value={filters.value_date || ''}
-              onChange={handleChange('value_date')}
-              className="border border-slate-300 rounded-lg text-sm pl-8 pr-3 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
-            />
+        <div className="flex items-start gap-3">
+          <div>
+            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">Value Date</label>
+            <div className="relative">
+              <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                type="date"
+                value={filters.value_date || ''}
+                onChange={handleChange('value_date')}
+                className="border border-slate-300 rounded-lg text-sm pl-8 pr-3 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 mt-[18px]">
+            <button
+              type="button"
+              onClick={() => downloadSectionsAsPdf(['fum-valuation', 'fum-summary', 'fum-detail'], 'Funds Under Management')}
+              title="Export Funds Under Management as PDF"
+              className="flex items-center gap-1.5 text-xs font-medium border border-slate-300 rounded-full px-3 py-1.5 text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition"
+            >
+              <Download size={13} />
+              Export
+            </button>
           </div>
         </div>
       </div>

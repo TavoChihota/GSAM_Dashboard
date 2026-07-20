@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
-import { ArrowDownUp, Inbox } from 'lucide-react';
+import { ArrowDownUp, Inbox, Download } from 'lucide-react';
 import Highcharts from 'highcharts';
 import * as HighchartsReactModule from 'highcharts-react-official';
+import CardIconButton from '@/Components/CardIconButton';
+import { downloadCardAsPdf } from '@/lib/exportCardPdf';
 
 function resolveComponent(mod) {
   let m = mod;
@@ -65,11 +67,22 @@ export default function CashMovementCard({ cashMovement = { items: [], total: 0 
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex-1 min-w-0" data-card>
-      <div className="flex items-center gap-2.5 mb-1">
-        <div className="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center text-sky-600 shrink-0">
-          <ArrowDownUp size={16} strokeWidth={2.2} />
+      <div className="flex items-start justify-between mb-1 flex-wrap gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center text-sky-600 shrink-0">
+            <ArrowDownUp size={16} strokeWidth={2.2} />
+          </div>
+          <h3 className="font-semibold text-slate-900">Cash Movement</h3>
         </div>
-        <h3 className="font-semibold text-slate-900">Cash Movement</h3>
+        <button
+          type="button"
+          onClick={(e) => downloadCardAsPdf(e, 'Cash Movement')}
+          title="Export Cash Movement as PDF"
+          className="flex items-center gap-1.5 text-xs font-medium border border-slate-300 rounded-full px-3 py-1.5 text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition shrink-0"
+        >
+          <Download size={13} />
+          Export
+        </button>
       </div>
       <p className="text-xs text-slate-400 mb-3 pl-[42px]">
         Deposits, withdrawals, maturities, and placements for the selected month.

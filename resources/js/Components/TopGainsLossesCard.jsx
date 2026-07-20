@@ -1,4 +1,8 @@
-import { TrendingUp, TrendingDown, Inbox } from 'lucide-react';
+import { useState } from 'react';
+import { TrendingUp, TrendingDown, Inbox, Download, ExpandIcon } from 'lucide-react';
+import CardIconButton from '@/Components/CardIconButton';
+import CardExpandModal from '@/Components/CardExpandModal';
+import { downloadCardAsPdf } from '@/lib/exportCardPdf';
 
 const fmt = (n) => (n == null ? '' : n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const fmtPct = (n) => (n == null ? '' : n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }));
@@ -65,14 +69,31 @@ function GainsLossesTable({ title, rows, tone }) {
 
 export default function TopGainsLossesCard({ topGainsLosses = { gains: [], losses: [] } }) {
   const { gains, losses } = topGainsLosses;
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm" data-card>
-      <div className="flex items-center gap-2.5 mb-1">
-        <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center text-violet-600 shrink-0">
-          <TrendingUp size={16} strokeWidth={2.2} />
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center text-violet-600 shrink-0">
+            <TrendingUp size={16} strokeWidth={2.2} />
+          </div>
+          <h3 className="font-semibold text-slate-900">Top 5 Gains &amp; Losses</h3>
         </div>
-        <h3 className="font-semibold text-slate-900">Top 5 Gains &amp; Losses</h3>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={(e) => downloadCardAsPdf(e, 'Top 5 Gains and Losses')}
+            title="Export Top 5 Gains and Losses as PDF"
+            className="flex items-center gap-1.5 text-xs font-medium border border-slate-300 rounded-full px-3 py-1.5 text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition"
+          >
+            <Download size={13} />
+            Export
+          </button>
+          <CardIconButton onClick={() => setExpanded(true)} title="Expand Top 5 Gains and Losses">
+            <ExpandIcon size={16} />
+          </CardIconButton>
+        </div>
       </div>
       <p className="text-xs text-slate-400 mb-4 pl-[42px]">
         Biggest equity movers by percentage change on the exchange.
@@ -82,6 +103,13 @@ export default function TopGainsLossesCard({ topGainsLosses = { gains: [], losse
         <GainsLossesTable title="Top Gains" rows={gains} tone="gain" />
         <GainsLossesTable title="Top Losses" rows={losses} tone="loss" />
       </div>
+
+      <CardExpandModal open={expanded} onClose={() => setExpanded(false)} title="Top 5 Gains & Losses">
+        <div className="flex flex-col lg:flex-row gap-6">
+          <GainsLossesTable title="Top Gains" rows={gains} tone="gain" />
+          <GainsLossesTable title="Top Losses" rows={losses} tone="loss" />
+        </div>
+      </CardExpandModal>
     </div>
   );
 }
