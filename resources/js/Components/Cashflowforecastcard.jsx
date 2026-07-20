@@ -3,6 +3,7 @@ import { router } from '@inertiajs/react';
 import { CalendarClock, Calendar, Search, Inbox, Download, ExpandIcon } from 'lucide-react';
 import CardIconButton from '@/Components/CardIconButton';
 import CardExpandModal from '@/Components/CardExpandModal';
+import DataTable from '@/Components/DataTable/DataTable';
 import { downloadCardAsPdf } from '@/lib/exportCardPdf';
 
 const fmt = (n) => (n == null || n === '' ? '' : Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -13,64 +14,46 @@ const fmtDate = (s) => {
   return d.toLocaleDateString('en-GB'); // dd/mm/yyyy
 };
 
+const FORECAST_COLUMNS = [
+  {
+    key: 'counterparty',
+    label: 'Counterparty',
+    hideable: false,
+    render: (r) => <span className="font-medium text-slate-800">{r.counterparty}</span>,
+    footer: (t) => `Total: ${t.count}`,
+  },
+  { key: 'instrumentType', label: 'Instrument', render: (r) => r.instrumentType },
+  { key: 'investmentIndustry', label: 'Industry', render: (r) => r.investmentIndustry },
+  { key: 'price', label: 'Price', align: 'right', render: (r) => fmt(r.price), footer: (t) => fmt(t.price) },
+  { key: 'interest', label: 'Interest', align: 'right', render: (r) => fmt(r.interest), footer: (t) => fmt(t.interest) },
+  {
+    key: 'cashFlowIn',
+    label: 'Cash Flow In',
+    align: 'right',
+    render: (r) => <span className="text-emerald-600">{fmt(r.cashFlowIn)}</span>,
+    footer: (t) => <span className="text-emerald-700">{fmt(t.cashFlowIn)}</span>,
+  },
+  {
+    key: 'cashFlowOut',
+    label: 'Cash Flow Out',
+    align: 'right',
+    render: (r) => <span className="text-red-500">{fmt(r.cashFlowOut)}</span>,
+    footer: (t) => <span className="text-red-600">{fmt(t.cashFlowOut)}</span>,
+  },
+  { key: 'daysBeforeMaturity', label: 'Days to Maturity', align: 'right', render: (r) => r.daysBeforeMaturity ?? '' },
+  { key: 'cashFlowDate', label: 'Cash Flow Date', render: (r) => fmtDate(r.cashFlowDate) },
+];
+
 function ForecastTable({ rows, totals }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-left text-[11px] text-slate-400 uppercase tracking-wide bg-slate-50 border-b border-slate-200">
-            <th className="py-2.5 px-3 font-medium">Counterparty</th>
-            <th className="py-2.5 px-3 font-medium">Instrument</th>
-            <th className="py-2.5 px-3 font-medium">Industry</th>
-            <th className="py-2.5 px-3 font-medium text-right">Price</th>
-            <th className="py-2.5 px-3 font-medium text-right">Interest</th>
-            <th className="py-2.5 px-3 font-medium text-right">Cash Flow In</th>
-            <th className="py-2.5 px-3 font-medium text-right">Cash Flow Out</th>
-            <th className="py-2.5 px-3 font-medium text-right">Days to Maturity</th>
-            <th className="py-2.5 px-3 font-medium">Cash Flow Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length === 0 ? (
-            <tr>
-              <td colSpan={9} className="text-center text-sm text-slate-400 py-12">
-                <div className="flex flex-col items-center gap-2">
-                  <Inbox size={24} strokeWidth={1.5} />
-                  No cash flow forecast data for this period.
-                </div>
-              </td>
-            </tr>
-          ) : (
-            rows.map((r, i) => (
-              <tr key={i} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
-                <td className="py-2 px-3 font-medium text-slate-800">{r.counterparty}</td>
-                <td className="py-2 px-3 text-slate-600">{r.instrumentType}</td>
-                <td className="py-2 px-3 text-slate-600">{r.investmentIndustry}</td>
-                <td className="py-2 px-3 text-right tabular-nums text-slate-600">{fmt(r.price)}</td>
-                <td className="py-2 px-3 text-right tabular-nums text-slate-600">{fmt(r.interest)}</td>
-                <td className="py-2 px-3 text-right tabular-nums text-emerald-600">{fmt(r.cashFlowIn)}</td>
-                <td className="py-2 px-3 text-right tabular-nums text-red-500">{fmt(r.cashFlowOut)}</td>
-                <td className="py-2 px-3 text-right tabular-nums text-slate-600">{r.daysBeforeMaturity ?? ''}</td>
-                <td className="py-2 px-3 text-slate-600">{fmtDate(r.cashFlowDate)}</td>
-              </tr>
-            ))
-          )}
-        </tbody>
-        {rows.length > 0 && (
-          <tfoot>
-            <tr className="bg-slate-50 font-semibold border-t border-slate-200">
-              <td className="py-2.5 px-3">Total: {totals.count}</td>
-              <td className="py-2.5 px-3" colSpan={2}></td>
-              <td className="py-2.5 px-3 text-right tabular-nums">{fmt(totals.price)}</td>
-              <td className="py-2.5 px-3 text-right tabular-nums">{fmt(totals.interest)}</td>
-              <td className="py-2.5 px-3 text-right tabular-nums text-emerald-700">{fmt(totals.cashFlowIn)}</td>
-              <td className="py-2.5 px-3 text-right tabular-nums text-red-600">{fmt(totals.cashFlowOut)}</td>
-              <td className="py-2.5 px-3" colSpan={2}></td>
-            </tr>
-          </tfoot>
-        )}
-      </table>
-    </div>
+    <DataTable
+      storageKey="cashflow-forecast-table"
+      columns={FORECAST_COLUMNS}
+      rows={rows}
+      totals={totals}
+      emptyMessage="No cash flow forecast data for this period."
+      emptyIcon={Inbox}
+    />
   );
 }
 
