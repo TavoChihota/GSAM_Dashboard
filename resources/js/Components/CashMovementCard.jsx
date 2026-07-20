@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { ArrowDownUp, Inbox, Download } from 'lucide-react';
+import { router } from '@inertiajs/react';
+import { ArrowDownUp, Calendar, Inbox, Download } from 'lucide-react';
 import Highcharts from 'highcharts';
 import * as HighchartsReactModule from 'highcharts-react-official';
 import CardIconButton from '@/Components/CardIconButton';
@@ -26,8 +27,16 @@ const COLORS = {
 
 const fmt = (n) => (n ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-export default function CashMovementCard({ cashMovement = { items: [], total: 0 } }) {
+export default function CashMovementCard({ cashMovement = { items: [], total: 0 }, filters = {}, onDateChange }) {
   const { items, total } = cashMovement;
+
+  const handleDateChange = (e) => {
+    if (onDateChange) {
+      onDateChange('cash_movement_date', e.target.value);
+    } else {
+      router.get('/dashboard', { ...filters, cash_movement_date: e.target.value }, { preserveState: true, preserveScroll: true });
+    }
+  };
 
   const chartData = useMemo(
     () => items.map((i) => ({ name: i.name, y: i.value, color: COLORS[i.name] })),
@@ -74,15 +83,29 @@ export default function CashMovementCard({ cashMovement = { items: [], total: 0 
           </div>
           <h3 className="font-semibold text-slate-900">Cash Movement</h3>
         </div>
-        <button
-          type="button"
-          onClick={(e) => downloadCardAsPdf(e, 'Cash Movement')}
-          title="Export Cash Movement as PDF"
-          className="flex items-center gap-1.5 text-xs font-medium border border-slate-300 rounded-full px-3 py-1.5 text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition shrink-0"
-        >
-          <Download size={13} />
-          Export
-        </button>
+        <div className="flex items-start gap-3">
+          <div>
+            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">Value Date</label>
+            <div className="relative">
+              <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                type="date"
+                value={filters.cash_movement_date || ''}
+                onChange={handleDateChange}
+                className="border border-slate-300 rounded-lg text-sm pl-8 pr-3 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+              />
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => downloadCardAsPdf(e, 'Cash Movement')}
+            title="Export Cash Movement as PDF"
+            className="flex items-center gap-1.5 text-xs font-medium border border-slate-300 rounded-full px-3 py-1.5 text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition shrink-0 mt-[18px]"
+          >
+            <Download size={13} />
+            Export
+          </button>
+        </div>
       </div>
       <p className="text-xs text-slate-400 mb-3 pl-[42px]">
         Deposits, withdrawals, maturities, and placements for the selected month.

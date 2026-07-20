@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { CalendarCheck2, Search, Inbox, CheckCircle2, Circle, Download, ExpandIcon } from 'lucide-react';
+import { router } from '@inertiajs/react';
+import { CalendarCheck2, Calendar, Search, Inbox, CheckCircle2, Circle, Download, ExpandIcon } from 'lucide-react';
 import CardIconButton from '@/Components/CardIconButton';
 import CardExpandModal from '@/Components/CardExpandModal';
 import { downloadCardAsPdf } from '@/lib/exportCardPdf';
@@ -83,12 +84,29 @@ function MaturitiesTable({ tab, rows, totals }) {
   );
 }
 
-export default function MaturitiesCard({ maturities = { assets: { rows: [], totals: {} }, liabilities: { rows: [], totals: {} } } }) {
+export default function MaturitiesCard({
+  maturities = { assets: { rows: [], totals: {} }, liabilities: { rows: [], totals: {} } },
+  filters = {},
+  onDateChange,
+}) {
   const [tab, setTab] = useState('assets');
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState(false);
 
   const { rows, totals } = maturities[tab] || { rows: [], totals: {} };
+
+  // Assets and Liabilities each keep their own independent date, matching
+  // maturityAssetsDate / maturityLiabilitiesDate in the original dashboard.
+  const dateKey = tab === 'assets' ? 'maturity_assets_date' : 'maturity_liabilities_date';
+  const dateValue = tab === 'assets' ? filters.maturity_assets_date : filters.maturity_liabilities_date;
+
+  const handleDateChange = (e) => {
+    if (onDateChange) {
+      onDateChange(dateKey, e.target.value);
+    } else {
+      router.get('/dashboard', { ...filters, [dateKey]: e.target.value }, { preserveState: true, preserveScroll: true });
+    }
+  };
 
   const filteredRows = useMemo(() => {
     if (!search.trim()) return rows;
@@ -108,7 +126,21 @@ export default function MaturitiesCard({ maturities = { assets: { rows: [], tota
           </div>
           <h3 className="font-semibold text-slate-900">Maturities</h3>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-end gap-3 flex-wrap">
+          <div>
+            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">
+              {tab === 'assets' ? 'Assets Date' : 'Liabilities Date'}
+            </label>
+            <div className="relative">
+              <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                type="date"
+                value={dateValue || ''}
+                onChange={handleDateChange}
+                className="border border-slate-300 rounded-lg text-sm pl-8 pr-3 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+              />
+            </div>
+          </div>
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <input

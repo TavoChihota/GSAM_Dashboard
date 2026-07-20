@@ -15,25 +15,45 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $valueDate = $request->input('value_date', now()->format('Y-m-d'));
-        $currency  = $request->input('currency', 'USD');
+
         // The .NET API expects a numeric currency ID, not a code like "USD".
         // 9 matches the default the Next.js app used — adjust if your
         // CurrencyRate params table uses a different ID for USD.
         $currencyId = (int) $request->input('currency_id', 9);
 
+        // Each card can be filtered independently — mirrors fumDate,
+        // shareMovementDate, cashMovementDate, cashflowCompareDate,
+        // maturityAssetsDate, maturityLiabilitiesDate in InteractiveDashboards.js.
+        // Every one defaults to the top "Value Date" the first time it's loaded,
+        // then travels independently as its own query param from then on.
+        $fumDate                 = $request->input('fum_date', $valueDate);
+        $shareMovementDate       = $request->input('share_movement_date', $valueDate);
+        $cashMovementDate        = $request->input('cash_movement_date', $valueDate);
+        $cashFlowForecastDate    = $request->input('cash_flow_forecast_date', $valueDate);
+        $maturityAssetsDate      = $request->input('maturity_assets_date', $valueDate);
+        $maturityLiabilitiesDate = $request->input('maturity_liabilities_date', $valueDate);
+
         $clientDetails = $this->gsam->clientDetails();
-        $shareMovement = $this->gsam->shareMovement($valueDate);
-        $fum           = $this->gsam->fundsUnderManagement($valueDate, $currencyId);
-        $cashMovement  = $this->getCashMovement($valueDate);
+        $shareMovement = $this->gsam->shareMovement($shareMovementDate);
+        $fum           = $this->gsam->fundsUnderManagement($fumDate, $currencyId);
+        $cashMovement  = $this->getCashMovement($cashMovementDate);
         $topGainsLosses = $this->getTopGainsAndLosses();
-        $cashFlowForecast = $this->getCashFlowForecast($valueDate);
-        $maturities = $this->getMaturities($valueDate);
+        $cashFlowForecast = $this->getCashFlowForecast($cashFlowForecastDate);
+        $maturities = $this->getMaturities($maturityAssetsDate, $maturityLiabilitiesDate);
+        $currencyOptions = $this->gsam->currencyOptions();
 
         return Inertia::render('Dashboard', [
             'filters' => [
-                'value_date' => $valueDate,
-                'currency'   => $currency,
+                'value_date'                 => $valueDate,
+                'currency_id'                => $currencyId,
+                'fum_date'                   => $fumDate,
+                'share_movement_date'        => $shareMovementDate,
+                'cash_movement_date'         => $cashMovementDate,
+                'cash_flow_forecast_date'    => $cashFlowForecastDate,
+                'maturity_assets_date'       => $maturityAssetsDate,
+                'maturity_liabilities_date'  => $maturityLiabilitiesDate,
             ],
+            'currencyOptions'      => $currencyOptions,
             'clientDetails'        => $clientDetails,
             'shareMovement'        => $shareMovement,
             'fundsUnderManagement' => [
@@ -52,29 +72,32 @@ class DashboardController extends Controller
      * each with a totals row — mirrors the two MaturityDataGrid instances
      * (isAssets=true / isAssets=false) from the original app.
      */
-    protected function getMaturities(string $valueDate): array
+    protected function getMaturities(string $assetsDate, string $liabilitiesDate): array
     {
-        $date = \Carbon\Carbon::parse($valueDate);
-        $startDate = $date->copy()->startOfMonth()->format('Y-m-d');
-        $endDate   = $date->copy()->format('Y-m-d');
+        $sum = fn (array $rows, string $field) => array_sum(array_map(fn ($r) => (float) ($r[$field] ?? 0), $rows));
 
-        $buildSide = function (array $rows) {
-            $sum = fn ($field) => array_sum(array_map(fn ($r) => (float) ($r[$field] ?? 0), $rows));
+        $buildSide = function (string $valueDate, bool $isAssets) use ($sum) {
+            $date = \Carbon\Carbon::parse($valueDate);
+            $startDate = $date->copy()->startOfMonth()->format('Y-m-d');
+            $endDate   = $date->copy()->format('Y-m-d');
+
+            $rows = $this->gsam->maturities($startDate, $endDate, $isAssets);
+
             return [
                 'rows' => $rows,
                 'totals' => [
                     'count'         => count($rows),
-                    'nominal'       => $sum('nominal'),
-                    'interest'      => $sum('interest'),
-                    'maturityValue' => $sum('maturityValue'),
-                    'netAmount'     => $sum('netAmount'),
+                    'nominal'       => $sum($rows, 'nominal'),
+                    'interest'      => $sum($rows, 'interest'),
+                    'maturityValue' => $sum($rows, 'maturityValue'),
+                    'netAmount'     => $sum($rows, 'netAmount'),
                 ],
             ];
         };
 
         return [
-            'assets'      => $buildSide($this->gsam->maturities($startDate, $endDate, true)),
-            'liabilities' => $buildSide($this->gsam->maturities($startDate, $endDate, false)),
+            'assets'      => $buildSide($assetsDate, true),
+            'liabilities' => $buildSide($liabilitiesDate, false),
         ];
     }
 

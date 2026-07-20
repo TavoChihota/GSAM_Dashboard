@@ -9,8 +9,20 @@ import TopGainsLossesCard from '@/Components/TopGainsLossesCard';
 import CashFlowForecastCard from '@/Components/CashFlowForecastCard';
 import MaturitiesCard from '@/Components/MaturitiesCard';
 
+const todayIso = () => new Date().toISOString().slice(0, 10);
+
 export default function Dashboard({
-  filters = { value_date: new Date().toISOString().slice(0, 10), currency: 'USD' },
+  filters = {
+    value_date: todayIso(),
+    currency_id: 9,
+    fum_date: todayIso(),
+    share_movement_date: todayIso(),
+    cash_movement_date: todayIso(),
+    cash_flow_forecast_date: todayIso(),
+    maturity_assets_date: todayIso(),
+    maturity_liabilities_date: todayIso(),
+  },
+  currencyOptions = [],
   clientDetails = [],
   shareMovement = [],
   fundsUnderManagement = { rows: [], sums: null },
@@ -19,9 +31,14 @@ export default function Dashboard({
   cashFlowForecast = { rows: [], totals: {} },
   maturities = { assets: { rows: [], totals: {} }, liabilities: { rows: [], totals: {} } },
 }) {
-  const handleTopFilterChange = (key) => (e) => {
-    router.get('/dashboard', { ...filters, [key]: e.target.value }, { preserveState: true, preserveScroll: true });
+  // Shared updater — every card uses this with its own filter key so each
+  // date (and the currency) travels independently instead of all cards
+  // being pinned to one global date.
+  const updateFilter = (key, value) => {
+    router.get('/dashboard', { ...filters, [key]: value }, { preserveState: true, preserveScroll: true });
   };
+
+  const handleTopFilterChange = (key) => (e) => updateFilter(key, e.target.value);
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -68,18 +85,23 @@ export default function Dashboard({
 
           <div className="flex gap-6 flex-col lg:flex-row">
             <ClientInformationCard clientDetails={clientDetails} />
-            <ShareMovementCard shareMovement={shareMovement} filters={filters} />
+            <ShareMovementCard shareMovement={shareMovement} filters={filters} onDateChange={updateFilter} />
           </div>
 
-          <CashMovementCard cashMovement={cashMovement} />
+          <CashMovementCard cashMovement={cashMovement} filters={filters} onDateChange={updateFilter} />
 
           <TopGainsLossesCard topGainsLosses={topGainsLosses} />
 
-          <CashFlowForecastCard cashFlowForecast={cashFlowForecast} />
+          <CashFlowForecastCard cashFlowForecast={cashFlowForecast} filters={filters} onDateChange={updateFilter} />
 
-          <MaturitiesCard maturities={maturities} />
+          <MaturitiesCard maturities={maturities} filters={filters} onDateChange={updateFilter} />
 
-          <FundsUnderManagementCard fundsUnderManagement={fundsUnderManagement} filters={filters} />
+          <FundsUnderManagementCard
+            fundsUnderManagement={fundsUnderManagement}
+            filters={filters}
+            currencyOptions={currencyOptions}
+            onDateChange={updateFilter}
+          />
         </main>
       </div>
     </div>

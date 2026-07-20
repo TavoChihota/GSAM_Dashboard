@@ -44,11 +44,29 @@ function buildSummaryRows(sums) {
   return base;
 }
 
-export default function FundsUnderManagementCard({ fundsUnderManagement = { rows: [], sums: null }, filters = {} }) {
+export default function FundsUnderManagementCard({
+  fundsUnderManagement = { rows: [], sums: null },
+  filters = {},
+  currencyOptions = [],
+  onDateChange,
+}) {
   const { rows, sums } = fundsUnderManagement;
 
-  const handleChange = (key) => (e) => {
-    router.get('/dashboard', { ...filters, [key]: e.target.value }, { preserveState: true, preserveScroll: true });
+  const handleDateChange = (e) => {
+    if (onDateChange) {
+      onDateChange('fum_date', e.target.value);
+    } else {
+      router.get('/dashboard', { ...filters, fum_date: e.target.value }, { preserveState: true, preserveScroll: true });
+    }
+  };
+
+  const handleCurrencyChange = (e) => {
+    const value = e.target.value;
+    if (onDateChange) {
+      onDateChange('currency_id', value);
+    } else {
+      router.get('/dashboard', { ...filters, currency_id: value }, { preserveState: true, preserveScroll: true });
+    }
   };
 
   const summaryRows = useMemo(() => buildSummaryRows(sums), [sums]);
@@ -120,13 +138,27 @@ export default function FundsUnderManagementCard({ fundsUnderManagement = { rows
         </div>
         <div className="flex items-start gap-3">
           <div>
+            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">Currency</label>
+            <select
+              value={filters.currency_id ?? ''}
+              onChange={handleCurrencyChange}
+              disabled={currencyOptions.length === 0}
+              className="border border-slate-300 rounded-lg text-sm pl-3 pr-8 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 disabled:bg-slate-50 disabled:text-slate-400"
+            >
+              {currencyOptions.length === 0 && <option value={filters.currency_id ?? ''}>USD</option>}
+              {currencyOptions.map((c) => (
+                <option key={c.id} value={c.id}>{c.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
             <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">Value Date</label>
             <div className="relative">
               <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="date"
-                value={filters.value_date || ''}
-                onChange={handleChange('value_date')}
+                value={filters.fum_date || ''}
+                onChange={handleDateChange}
                 className="border border-slate-300 rounded-lg text-sm pl-8 pr-3 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
               />
             </div>

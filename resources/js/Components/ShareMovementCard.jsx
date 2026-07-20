@@ -61,11 +61,15 @@ function buildOptions(categories, chartData, height) {
   };
 }
 
-export default function ShareMovementCard({ shareMovement = [], filters = {} }) {
+export default function ShareMovementCard({ shareMovement = [], filters = {}, onDateChange }) {
   const [expanded, setExpanded] = useState(false);
 
   const handleDateChange = (e) => {
-    router.get('/dashboard', { ...filters, value_date: e.target.value }, { preserveState: true, preserveScroll: true });
+    if (onDateChange) {
+      onDateChange('share_movement_date', e.target.value);
+    } else {
+      router.get('/dashboard', { ...filters, share_movement_date: e.target.value }, { preserveState: true, preserveScroll: true });
+    }
   };
 
   const { categories, chartData, hasData } = useMemo(() => {
@@ -103,7 +107,7 @@ export default function ShareMovementCard({ shareMovement = [], filters = {} }) 
               <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="date"
-                value={filters.value_date || ''}
+                value={filters.share_movement_date || ''}
                 onChange={handleDateChange}
                 className="border border-slate-300 rounded-lg text-sm pl-8 pr-3 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
               />

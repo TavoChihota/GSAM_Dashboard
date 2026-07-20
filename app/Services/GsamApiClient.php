@@ -176,6 +176,37 @@ class GsamApiClient
     }
 
     /**
+     * POST /api/client/Params
+     * Returns the big params bag the Next.js app loads into Redux on login —
+     * { Currency: [...], ...other lookup lists }. We only use Currency here.
+     */
+    public function clientParams(): array
+    {
+        $response = $this->client()->post('/api/client/Params');
+
+        return $this->unwrap($response, 'clientParams');
+    }
+
+    /**
+     * Currency dropdown options for the FUM card.
+     * Each raw item is { id, reason } — 'reason' is the display code (e.g. "USD").
+     * Mirrors the currencyOptions memo in InteractiveDashboards.js.
+     */
+    public function currencyOptions(): array
+    {
+        $currencies = $this->clientParams()['Currency'] ?? [];
+
+        return collect($currencies)
+            ->filter(fn ($c) => isset($c['id']))
+            ->map(fn ($c) => [
+                'id'    => (int) $c['id'],
+                'label' => $c['reason'] ?? ('Currency ' . $c['id']),
+            ])
+            ->values()
+            ->toArray();
+    }
+
+    /**
      * The .NET API always responds { status, message, data }.
      * This normalizes that into just the data (or throws/logs on error)
      * so controllers don't have to repeat this check everywhere.

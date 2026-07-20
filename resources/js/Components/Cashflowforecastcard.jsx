@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { CalendarClock, Search, Inbox, Download, ExpandIcon } from 'lucide-react';
+import { router } from '@inertiajs/react';
+import { CalendarClock, Calendar, Search, Inbox, Download, ExpandIcon } from 'lucide-react';
 import CardIconButton from '@/Components/CardIconButton';
 import CardExpandModal from '@/Components/CardExpandModal';
 import { downloadCardAsPdf } from '@/lib/exportCardPdf';
@@ -73,10 +74,18 @@ function ForecastTable({ rows, totals }) {
   );
 }
 
-export default function CashFlowForecastCard({ cashFlowForecast = { rows: [], totals: {} } }) {
+export default function CashFlowForecastCard({ cashFlowForecast = { rows: [], totals: {} }, filters = {}, onDateChange }) {
   const { rows, totals } = cashFlowForecast;
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState(false);
+
+  const handleDateChange = (e) => {
+    if (onDateChange) {
+      onDateChange('cash_flow_forecast_date', e.target.value);
+    } else {
+      router.get('/dashboard', { ...filters, cash_flow_forecast_date: e.target.value }, { preserveState: true, preserveScroll: true });
+    }
+  };
 
   const filteredRows = useMemo(() => {
     if (!search.trim()) return rows;
@@ -96,7 +105,19 @@ export default function CashFlowForecastCard({ cashFlowForecast = { rows: [], to
           </div>
           <h3 className="font-semibold text-slate-900">Cash Flow Forecast</h3>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-end gap-3 flex-wrap">
+          <div>
+            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">Value Date</label>
+            <div className="relative">
+              <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                type="date"
+                value={filters.cash_flow_forecast_date || ''}
+                onChange={handleDateChange}
+                className="border border-slate-300 rounded-lg text-sm pl-8 pr-3 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+              />
+            </div>
+          </div>
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <input
