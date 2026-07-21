@@ -41,11 +41,11 @@ export default function Dashboard({
   const handleTopFilterChange = (key) => (e) => updateFilter(key, e.target.value);
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50">
       <Head title="Executive Dashboard" />
       <Sidebar />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="ml-60 flex flex-col min-w-0 min-h-screen">
         <header className="flex items-center justify-between px-8 py-3.5 bg-white border-b border-slate-200 gap-3 flex-wrap">
           <div className="text-sm text-slate-500 font-medium">Unified Portfolio Ledger</div>
           <div className="flex items-center gap-3">

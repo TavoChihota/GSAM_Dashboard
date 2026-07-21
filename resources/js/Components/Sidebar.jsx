@@ -11,7 +11,7 @@ export default function Sidebar() {
   const { url } = usePage();
 
   return (
-    <aside className="w-60 bg-[#0B1220] text-slate-300 flex flex-col shrink-0 min-h-screen">
+    <aside className="fixed inset-y-0 left-0 z-30 w-60 overflow-y-auto bg-[#0B1220] text-slate-300 flex flex-col shrink-0 min-h-screen">
       <div className="flex items-center gap-3 px-5 py-6 border-b border-white/5">
         <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center font-bold text-sm text-white shadow-lg shadow-blue-900/40">
           G
