@@ -3,7 +3,7 @@ import { router } from '@inertiajs/react';
 import { CalendarClock, Calendar, Search, Inbox, Download, ExpandIcon } from 'lucide-react';
 import CardIconButton from '@/Components/CardIconButton';
 import CardExpandModal from '@/Components/CardExpandModal';
-import DataTable from '@/Components/DataTable/DataTable';
+import ColumnChooser from '@/Components/ColumnChooser';
 import { downloadCardAsPdf } from '@/lib/exportCardPdf';
 
 const fmt = (n) => (n == null || n === '' ? '' : Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -44,16 +44,68 @@ const FORECAST_COLUMNS = [
   { key: 'cashFlowDate', label: 'Cash Flow Date', render: (r) => fmtDate(r.cashFlowDate) },
 ];
 
-function ForecastTable({ rows, totals }) {
+function ForecastTable({ rows, totals, visibleColumns }) {
+  const visibleCount = Object.values(visibleColumns || {}).filter((value) => value !== false).length;
+
   return (
-    <DataTable
-      storageKey="cashflow-forecast-table"
-      columns={FORECAST_COLUMNS}
-      rows={rows}
-      totals={totals}
-      emptyMessage="No cash flow forecast data for this period."
-      emptyIcon={Inbox}
-    />
+    <div className="overflow-x-auto rounded-xl border border-slate-200">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-[11px] text-slate-400 uppercase tracking-wide bg-slate-50 border-b border-slate-200">
+            {visibleColumns.counterparty !== false && <th className="py-2.5 px-3 font-medium">Counterparty</th>}
+            {visibleColumns.instrumentType !== false && <th className="py-2.5 px-3 font-medium">Instrument</th>}
+            {visibleColumns.investmentIndustry !== false && <th className="py-2.5 px-3 font-medium">Industry</th>}
+            {visibleColumns.price !== false && <th className="py-2.5 px-3 font-medium text-right">Price</th>}
+            {visibleColumns.interest !== false && <th className="py-2.5 px-3 font-medium text-right">Interest</th>}
+            {visibleColumns.cashFlowIn !== false && <th className="py-2.5 px-3 font-medium text-right">Cash Flow In</th>}
+            {visibleColumns.cashFlowOut !== false && <th className="py-2.5 px-3 font-medium text-right">Cash Flow Out</th>}
+            {visibleColumns.daysBeforeMaturity !== false && <th className="py-2.5 px-3 font-medium text-right">Days to Maturity</th>}
+            {visibleColumns.cashFlowDate !== false && <th className="py-2.5 px-3 font-medium">Cash Flow Date</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={visibleCount || 1} className="text-center text-sm text-slate-400 py-12">
+                <div className="flex flex-col items-center gap-2">
+                  <Inbox size={24} strokeWidth={1.5} />
+                  No cash flow forecast data for this period.
+                </div>
+              </td>
+            </tr>
+          ) : (
+            rows.map((row, index) => (
+              <tr key={row.id ?? index} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
+                {visibleColumns.counterparty !== false && <td className="py-2 px-3 font-medium text-slate-800">{row.counterparty}</td>}
+                {visibleColumns.instrumentType !== false && <td className="py-2 px-3 text-slate-600">{row.instrumentType}</td>}
+                {visibleColumns.investmentIndustry !== false && <td className="py-2 px-3 text-slate-600">{row.investmentIndustry}</td>}
+                {visibleColumns.price !== false && <td className="py-2 px-3 text-right tabular-nums text-slate-700">{fmt(row.price)}</td>}
+                {visibleColumns.interest !== false && <td className="py-2 px-3 text-right tabular-nums text-slate-600">{fmt(row.interest)}</td>}
+                {visibleColumns.cashFlowIn !== false && <td className="py-2 px-3 text-right tabular-nums text-emerald-600">{fmt(row.cashFlowIn)}</td>}
+                {visibleColumns.cashFlowOut !== false && <td className="py-2 px-3 text-right tabular-nums text-red-500">{fmt(row.cashFlowOut)}</td>}
+                {visibleColumns.daysBeforeMaturity !== false && <td className="py-2 px-3 text-right tabular-nums text-slate-600">{row.daysBeforeMaturity ?? ''}</td>}
+                {visibleColumns.cashFlowDate !== false && <td className="py-2 px-3 text-slate-600">{fmtDate(row.cashFlowDate)}</td>}
+              </tr>
+            ))
+          )}
+        </tbody>
+        {rows.length > 0 && (
+          <tfoot>
+            <tr className="bg-slate-50 font-semibold border-t border-slate-200">
+              {visibleColumns.counterparty !== false && <td className="py-2.5 px-3">Total: {totals.count}</td>}
+              {visibleColumns.instrumentType !== false && <td className="py-2.5 px-3"></td>}
+              {visibleColumns.investmentIndustry !== false && <td className="py-2.5 px-3"></td>}
+              {visibleColumns.price !== false && <td className="py-2.5 px-3 text-right tabular-nums">{fmt(totals.price)}</td>}
+              {visibleColumns.interest !== false && <td className="py-2.5 px-3 text-right tabular-nums">{fmt(totals.interest)}</td>}
+              {visibleColumns.cashFlowIn !== false && <td className="py-2.5 px-3 text-right tabular-nums text-emerald-700">{fmt(totals.cashFlowIn)}</td>}
+              {visibleColumns.cashFlowOut !== false && <td className="py-2.5 px-3 text-right tabular-nums text-red-600">{fmt(totals.cashFlowOut)}</td>}
+              {visibleColumns.daysBeforeMaturity !== false && <td className="py-2.5 px-3"></td>}
+              {visibleColumns.cashFlowDate !== false && <td className="py-2.5 px-3"></td>}
+            </tr>
+          </tfoot>
+        )}
+      </table>
+    </div>
   );
 }
 
@@ -61,6 +113,33 @@ export default function CashFlowForecastCard({ cashFlowForecast = { rows: [], to
   const { rows, totals } = cashFlowForecast;
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState({
+    counterparty: true,
+    instrumentType: true,
+    investmentIndustry: true,
+    price: true,
+    interest: true,
+    cashFlowIn: true,
+    cashFlowOut: true,
+    daysBeforeMaturity: true,
+    cashFlowDate: true,
+  });
+
+  const columnOptions = [
+    { key: 'counterparty', label: 'Counterparty' },
+    { key: 'instrumentType', label: 'Instrument' },
+    { key: 'investmentIndustry', label: 'Industry' },
+    { key: 'price', label: 'Price' },
+    { key: 'interest', label: 'Interest' },
+    { key: 'cashFlowIn', label: 'Cash Flow In' },
+    { key: 'cashFlowOut', label: 'Cash Flow Out' },
+    { key: 'daysBeforeMaturity', label: 'Days to Maturity' },
+    { key: 'cashFlowDate', label: 'Cash Flow Date' },
+  ];
+
+  const handleColumnToggle = (key) => {
+    setVisibleColumns((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const handleDateChange = (e) => {
     if (onDateChange) {
@@ -112,6 +191,12 @@ export default function CashFlowForecastCard({ cashFlowForecast = { rows: [], to
             />
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <ColumnChooser
+              options={columnOptions}
+              visibleColumns={visibleColumns}
+              onToggle={handleColumnToggle}
+              label="Columns"
+            />
             <button
               type="button"
               onClick={(e) => downloadCardAsPdf(e, 'Cash Flow Forecast')}
@@ -131,10 +216,10 @@ export default function CashFlowForecastCard({ cashFlowForecast = { rows: [], to
         Per-instrument cash flow projections from the start of the month to the value date.
       </p>
 
-      <ForecastTable rows={filteredRows} totals={totals} />
+      <ForecastTable rows={filteredRows} totals={totals} visibleColumns={visibleColumns} />
 
       <CardExpandModal open={expanded} onClose={() => setExpanded(false)} title="Cash Flow Forecast">
-        <ForecastTable rows={filteredRows} totals={totals} />
+        <ForecastTable rows={filteredRows} totals={totals} visibleColumns={visibleColumns} />
       </CardExpandModal>
     </div>
   );
