@@ -8,6 +8,7 @@ import CashMovementCard from '@/Components/CashMovementCard';
 import TopGainsLossesCard from '@/Components/TopGainsLossesCard';
 import CashFlowForecastCard from '@/Components/CashFlowForecastCard';
 import MaturitiesCard from '@/Components/MaturitiesCard';
+import DashboardStats from '@/Components/DashboardStats';
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
@@ -82,6 +83,13 @@ export default function Dashboard({
               </div>
             </div>
           </div>
+
+          <DashboardStats
+            cashMovement={cashMovement}
+            cashFlowForecast={cashFlowForecast}
+            maturities={maturities}
+            fundsUnderManagement={fundsUnderManagement}
+          />
 
           <div className="flex gap-6 flex-col lg:flex-row">
             <ClientInformationCard clientDetails={clientDetails} />
