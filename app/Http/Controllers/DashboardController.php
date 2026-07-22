@@ -15,25 +15,6 @@ class DashboardController extends Controller
 
     public function index(Request $request)
     {
-        $valueDate = $request->input('value_date', now()->format('Y-m-d'));
-
-        // The .NET API expects a numeric currency ID, not a code like "USD".
-        // 9 matches the default the Next.js app used — adjust if your
-        // CurrencyRate params table uses a different ID for USD.
-        $currencyId = (int) $request->input('currency_id', 9);
-
-        // Each card can be filtered independently — mirrors fumDate,
-        // shareMovementDate, cashMovementDate, cashflowCompareDate,
-        // maturityAssetsDate, maturityLiabilitiesDate in InteractiveDashboards.js.
-        // Every one defaults to the top "Value Date" the first time it's loaded,
-        // then travels independently as its own query param from then on.
-        $fumDate                 = $request->input('fum_date', $valueDate);
-        $shareMovementDate       = $request->input('share_movement_date', $valueDate);
-        $cashMovementDate        = $request->input('cash_movement_date', $valueDate);
-        $cashFlowForecastDate    = $request->input('cash_flow_forecast_date', $valueDate);
-        $maturityAssetsDate      = $request->input('maturity_assets_date', $valueDate);
-        $maturityLiabilitiesDate = $request->input('maturity_liabilities_date', $valueDate);
-
         return Inertia::render('Dashboard', $this->buildDashboardProps($request));
     }
 
@@ -46,12 +27,13 @@ class DashboardController extends Controller
     {
         $valueDate = $request->input('value_date', now()->format('Y-m-d'));
         $currencyId = (int) $request->input('currency_id', 9);
-        $fumDate                 = $request->input('fum_date', $valueDate);
-        $shareMovementDate       = $request->input('share_movement_date', $valueDate);
-        $cashMovementDate        = $request->input('cash_movement_date', $valueDate);
-        $cashFlowForecastDate    = $request->input('cash_flow_forecast_date', $valueDate);
-        $maturityAssetsDate      = $request->input('maturity_assets_date', $valueDate);
-        $maturityLiabilitiesDate = $request->input('maturity_liabilities_date', $valueDate);
+        $fumDate                    = $request->input('fum_date', $valueDate);
+        $shareMovementDate          = $request->input('share_movement_date', $valueDate);
+        $cashMovementDate           = $request->input('cash_movement_date', $valueDate);
+        $cashFlowForecastDate       = $request->input('cash_flow_forecast_date', $valueDate);
+        $maturityAssetsDate         = $request->input('maturity_assets_date', $valueDate);
+        $maturityLiabilitiesDate    = $request->input('maturity_liabilities_date', $valueDate);
+        $maturitiesVsPlacementsDate = $request->input('maturities_vs_placements_date', $valueDate);
 
         $clientDetails = $this->gsam->clientDetails();
         $shareMovement = $this->gsam->shareMovement($shareMovementDate);
@@ -60,18 +42,20 @@ class DashboardController extends Controller
         $topGainsLosses = $this->getTopGainsAndLosses();
         $cashFlowForecast = $this->getCashFlowForecast($cashFlowForecastDate);
         $maturities = $this->getMaturities($maturityAssetsDate, $maturityLiabilitiesDate);
+        $maturitiesVsPlacements = $this->getMaturitiesVsPlacements($maturitiesVsPlacementsDate);
         $currencyOptions = $this->gsam->currencyOptions();
 
         return [
             'filters' => [
-                'value_date'                 => $valueDate,
-                'currency_id'                => $currencyId,
-                'fum_date'                   => $fumDate,
-                'share_movement_date'        => $shareMovementDate,
-                'cash_movement_date'         => $cashMovementDate,
-                'cash_flow_forecast_date'    => $cashFlowForecastDate,
-                'maturity_assets_date'       => $maturityAssetsDate,
-                'maturity_liabilities_date'  => $maturityLiabilitiesDate,
+                'value_date'                    => $valueDate,
+                'currency_id'                   => $currencyId,
+                'fum_date'                      => $fumDate,
+                'share_movement_date'           => $shareMovementDate,
+                'cash_movement_date'            => $cashMovementDate,
+                'cash_flow_forecast_date'       => $cashFlowForecastDate,
+                'maturity_assets_date'          => $maturityAssetsDate,
+                'maturity_liabilities_date'     => $maturityLiabilitiesDate,
+                'maturities_vs_placements_date' => $maturitiesVsPlacementsDate,
             ],
             'currencyOptions'      => $currencyOptions,
             'clientDetails'        => $clientDetails,
@@ -80,10 +64,11 @@ class DashboardController extends Controller
                 'rows' => $fum['rows'] ?? [],
                 'sums' => $fum['sums'] ?? null,
             ],
-            'cashMovement'      => $cashMovement,
-            'topGainsLosses'    => $topGainsLosses,
-            'cashFlowForecast'  => $cashFlowForecast,
-            'maturities'        => $maturities,
+            'cashMovement'            => $cashMovement,
+            'topGainsLosses'          => $topGainsLosses,
+            'cashFlowForecast'        => $cashFlowForecast,
+            'maturities'              => $maturities,
+            'maturitiesVsPlacements'  => $maturitiesVsPlacements,
         ];
     }
 
@@ -119,6 +104,43 @@ class DashboardController extends Controller
             'assets'      => $buildSide($assetsDate, true),
             'liabilities' => $buildSide($liabilitiesDate, false),
         ];
+    }
+
+    /**
+     * Builds a 6-month trend by calling MaturitiesCashMovement and
+     * PlacementsCashMovement once per month (these endpoints only return a
+     * single aggregate for a given date, not a month-by-month series, so we
+     * stitch the trend together here instead of relying on the .NET API to
+     * do it). Lines are Assets/Liabilities, not Buy/Sell — that's the actual
+     * split these endpoints expose.
+     */
+    protected function getMaturitiesVsPlacements(string $referenceDate, int $months = 6): array
+    {
+        $reference = \Carbon\Carbon::parse($referenceDate);
+        $rows = [];
+
+        for ($i = $months - 1; $i >= 0; $i--) {
+            $monthDate = $reference->copy()->subMonths($i);
+            // Cap at the reference date for the current month so we don't ask
+            // for data past "today" when the reference date isn't month-end.
+            $endOfMonth = $monthDate->isSameMonth($reference)
+                ? $reference->copy()
+                : $monthDate->copy()->endOfMonth();
+            $endDateIso = $endOfMonth->format('Y-m-d');
+
+            $mat = $this->gsam->maturitiesCashMovement($endDateIso);
+            $pla = $this->gsam->placementsCashMovement($endDateIso);
+
+            $rows[] = [
+                'month'                 => $monthDate->format('M'),
+                'maturitiesAssets'      => (float) str_replace(',', '', $mat[0]['totalMaturities'] ?? 0),
+                'maturitiesLiabilities' => (float) str_replace(',', '', $mat[0]['totalMaturitiesLiability'] ?? 0),
+                'placementsAssets'      => (float) str_replace(',', '', $pla[0]['totalPlacements'] ?? 0),
+                'placementsLiabilities' => (float) str_replace(',', '', $pla[0]['totalPlacementsLiability'] ?? 0),
+            ];
+        }
+
+        return $rows;
     }
 
     /**

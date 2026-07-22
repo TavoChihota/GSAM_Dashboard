@@ -8,6 +8,7 @@ import CashMovementCard from '@/Components/CashMovementCard';
 import TopGainsLossesCard from '@/Components/TopGainsLossesCard';
 import CashFlowForecastCard from '@/Components/CashFlowForecastCard';
 import MaturitiesCard from '@/Components/MaturitiesCard';
+import MaturitiesVsPlacementsChart from '@/Components/MaturitiesVsPlacementsChart';
 import DashboardStats from '@/Components/DashboardStats';
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -22,6 +23,7 @@ export default function Dashboard({
     cash_flow_forecast_date: todayIso(),
     maturity_assets_date: todayIso(),
     maturity_liabilities_date: todayIso(),
+    maturities_vs_placements_date: todayIso(),
   },
   currencyOptions = [],
   clientDetails = [],
@@ -31,6 +33,7 @@ export default function Dashboard({
   topGainsLosses = { gains: [], losses: [] },
   cashFlowForecast = { rows: [], totals: {} },
   maturities = { assets: { rows: [], totals: {} }, liabilities: { rows: [], totals: {} } },
+  maturitiesVsPlacements = [],
 }) {
   // Shared updater — every card uses this with its own filter key so each
   // date (and the currency) travels independently instead of all cards
@@ -103,6 +106,12 @@ export default function Dashboard({
           <CashFlowForecastCard cashFlowForecast={cashFlowForecast} filters={filters} onDateChange={updateFilter} />
 
           <MaturitiesCard maturities={maturities} filters={filters} onDateChange={updateFilter} />
+
+          <MaturitiesVsPlacementsChart
+            maturitiesVsPlacements={maturitiesVsPlacements}
+            filters={filters}
+            onDateChange={updateFilter}
+          />
 
           <FundsUnderManagementCard
             fundsUnderManagement={fundsUnderManagement}
