@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\GsamApiClient;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -33,6 +34,25 @@ class DashboardController extends Controller
         $maturityAssetsDate      = $request->input('maturity_assets_date', $valueDate);
         $maturityLiabilitiesDate = $request->input('maturity_liabilities_date', $valueDate);
 
+        return Inertia::render('Dashboard', $this->buildDashboardProps($request));
+    }
+
+    public function analytics(Request $request)
+    {
+        return Inertia::render('Analytics', $this->buildDashboardProps($request));
+    }
+
+    protected function buildDashboardProps(Request $request): array
+    {
+        $valueDate = $request->input('value_date', now()->format('Y-m-d'));
+        $currencyId = (int) $request->input('currency_id', 9);
+        $fumDate                 = $request->input('fum_date', $valueDate);
+        $shareMovementDate       = $request->input('share_movement_date', $valueDate);
+        $cashMovementDate        = $request->input('cash_movement_date', $valueDate);
+        $cashFlowForecastDate    = $request->input('cash_flow_forecast_date', $valueDate);
+        $maturityAssetsDate      = $request->input('maturity_assets_date', $valueDate);
+        $maturityLiabilitiesDate = $request->input('maturity_liabilities_date', $valueDate);
+
         $clientDetails = $this->gsam->clientDetails();
         $shareMovement = $this->gsam->shareMovement($shareMovementDate);
         $fum           = $this->gsam->fundsUnderManagement($fumDate, $currencyId);
@@ -42,7 +62,7 @@ class DashboardController extends Controller
         $maturities = $this->getMaturities($maturityAssetsDate, $maturityLiabilitiesDate);
         $currencyOptions = $this->gsam->currencyOptions();
 
-        return Inertia::render('Dashboard', [
+        return [
             'filters' => [
                 'value_date'                 => $valueDate,
                 'currency_id'                => $currencyId,
@@ -64,7 +84,7 @@ class DashboardController extends Controller
             'topGainsLosses'    => $topGainsLosses,
             'cashFlowForecast'  => $cashFlowForecast,
             'maturities'        => $maturities,
-        ]);
+        ];
     }
 
     /**
@@ -168,7 +188,7 @@ class DashboardController extends Controller
         $monthEnd   = $date->copy()->endOfMonth()->format('d F Y');
         $endDateIso = $date->copy()->format('Y-m-d');
 
-        \Log::info('GSAM EndDate being sent', ['endDateIso' => $endDateIso]);
+        Log::info('GSAM EndDate being sent', ['endDateIso' => $endDateIso]);
 
         $tx  = $this->gsam->transaction($monthStart, $monthEnd);
         $mat = $this->gsam->maturitiesCashMovement($endDateIso);
